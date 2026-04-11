@@ -2,6 +2,9 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 import sys
 import os
 import shutil
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
+from layers.layer1_ingestion.cleaner import clean_dataframe
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 sys.path.insert(0, os.path.join(BASE_DIR, "layers/layer1_ingestion"))
@@ -36,6 +39,10 @@ async def upload_file(file: UploadFile = File(...)):
     # Layer 1 — Ingest
     try:
         df = ingest_file(temp_path)
+        result = clean_dataframe(df, use_ai=True)
+        df = result["dataframe"]            # use the cleaned DataFrame from here on
+        cleaning_log = result["log"]
+        cleaning_issues = result["issues"]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ingestion failed: {e}")
 
@@ -46,11 +53,14 @@ async def upload_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
     return {
-        "success": True,
-        "upload_id": metadata["upload_id"],
-        "table_name": metadata["table_name"],
-        "file_name": metadata["file_name"],
-        "rows": metadata["rows"],
-        "columns": metadata["columns"],
-        "column_names": metadata["column_names"]
-    }
+    "success": True,
+    "upload_id": metadata["upload_id"],
+    "table_name": metadata["table_name"],
+    "file_name": metadata["file_name"],
+    "rows": metadata["rows"],
+    "columns": metadata["columns"],
+    "column_names": metadata["column_names"],
+    "message": "File uploaded and processed successfully",
+    "cleaning_log": cleaning_log,
+    "cleaning_issues": cleaning_issues
+}

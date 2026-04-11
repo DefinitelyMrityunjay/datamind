@@ -2,6 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.upload import router as upload_router
 from routes.dashboard import router as dashboard_router
+# ADD this import at the top with your other route imports:
+from routes.chatbot import router as chatbot_router
+
+# ADD this line where you register other routers (look for app.include_router lines):
 
 app = FastAPI(title="AnalyzeIQ API", version="1.0.0")
 
@@ -17,6 +21,7 @@ app.add_middleware(
 # Routes
 app.include_router(upload_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
+app.include_router(chatbot_router, prefix="/api", tags=["Chatbot"])
 
 @app.get("/")
 def root():

@@ -6,6 +6,8 @@ import BarChart from "../components/BarChart";
 import LineChart from "../components/LineChart";
 import DataTable from "../components/DataTable";
 import InsightsCard from "../components/InsightsCard";
+import ChatWidget from "../components/ChatWidget";
+
 
 export default function Dashboard() {
   const { tableName } = useParams();
@@ -94,6 +96,8 @@ export default function Dashboard() {
 
       {/* Data Table */}
       <DataTable data={data.raw_data} />
+
+      <ChatWidget tableName={tableName} />
 
     </div>
   );
