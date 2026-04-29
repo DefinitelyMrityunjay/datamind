@@ -56,12 +56,13 @@ SQL:
     response = requests.post(
         "http://localhost:11434/api/generate",
         json={
-            "model": "tinyllama",
+            "model": "mistral",
             "prompt": prompt,
             "stream": False
         }
     )
-
+    response.raise_for_status()
+    result = response.json()
     raw_output = result.get("response", "").strip()
 
     # Remove markdown

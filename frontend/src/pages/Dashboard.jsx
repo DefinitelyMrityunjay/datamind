@@ -7,6 +7,7 @@ import LineChart from "../components/LineChart";
 import DataTable from "../components/DataTable";
 import InsightsCard from "../components/InsightsCard";
 import ChatWidget from "../components/ChatWidget";
+import ChartGrid from "../components/ChartGrid";
 
 
 export default function Dashboard() {
@@ -88,6 +89,14 @@ export default function Dashboard() {
           />
         )}
       </div>
+
+      {/* AI Chart Recommendations */}
+      {data.chart_recommendations && (
+        <ChartGrid
+          recommendations={data.chart_recommendations}
+          data={data.raw_data}
+        />
+      )}
 
       {/* AI Insights */}
       <div className="mb-8">

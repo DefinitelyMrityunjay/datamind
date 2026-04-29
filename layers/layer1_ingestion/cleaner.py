@@ -2,13 +2,11 @@ import os
 import json
 import re
 import pandas as pd
-import google.generativeai as genai
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-2.0-flash")
 
 
 # ─────────────────────────────────────────────
@@ -56,7 +54,7 @@ def build_dataframe_profile(df: pd.DataFrame) -> dict:
 # STEP 2 — Ask Gemini to detect issues
 # ─────────────────────────────────────────────
 
-def detect_issues_with_gemini(profile: dict) -> list[dict]:
+def detect_issues_with_mistral(profile: dict) -> list[dict]:
     """
     Sends the DataFrame profile to Gemini and gets back a list of
     detected data quality issues with suggested fixes.
@@ -94,8 +92,20 @@ If there are no issues, return an empty array: []
 JSON array:
 """
 
-    response = model.generate_content(prompt)
-    raw = response.text.strip()
+    response = requests.post(
+    "http://localhost:11434/api/generate",
+    json={
+        "model": "mistral",
+        "prompt": prompt,
+        "stream": False
+    },
+    timeout=60
+)
+
+    response.raise_for_status()
+    result = response.json()
+
+    raw = result.get("response", "").strip()
 
     # Strip markdown code fences if Gemini accidentally adds them
     raw = re.sub(r"^```json\s*", "", raw)
@@ -184,7 +194,7 @@ def basic_clean(df: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
     # 1. Strip whitespace from all string values
     str_cols = df.select_dtypes(include="object").columns
     for col in str_cols:
-        df[col] = df[col].str.strip()
+        df[col] = df[col].apply(lambda x: x.strip() if isinstance(x, str) else x)
 
     # 2. Clean column names: lowercase, replace spaces/special chars with underscore
     new_cols = []
@@ -255,7 +265,7 @@ def clean_dataframe(df: pd.DataFrame, use_ai: bool = True) -> dict:
     if use_ai:
         try:
             profile = build_dataframe_profile(df)
-            ai_issues = detect_issues_with_gemini(profile)
+            ai_issues = detect_issues_with_mistral(profile)
 
             if ai_issues:
                 df, ai_log = apply_fixes(df, ai_issues)
@@ -265,7 +275,7 @@ def clean_dataframe(df: pd.DataFrame, use_ai: bool = True) -> dict:
 
         except Exception as e:
             # If Gemini fails for any reason, don't crash the upload
-            full_log.append(f"⚠️ AI cleaning skipped (Gemini error): {str(e)}")
+            full_log.append(f"⚠️ AI cleaning skipped (Mistral error): {str(e)}")
 
     return {
         "dataframe": df,

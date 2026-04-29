@@ -4,6 +4,8 @@ import sys
 import pandas as pd
 import os
 import numpy as np
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
+from layers.layer3_dashboard.chart_agent import select_charts
 
 def convert_numpy(obj):
     """Convert numpy types to native Python types for JSON serialization."""
@@ -42,6 +44,20 @@ def get_dashboard(table_name: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Query failed: {e}")
 
+    # ✅ CALL AI AFTER DATA IS READY
+    try:
+        chart_result = select_charts(
+            df=df,
+            dataset_name=table_name,
+            use_ai=True
+        )
+    except Exception as e:
+        # fallback so dashboard still works even if AI fails
+        chart_result = {
+            "charts": [],
+            "profile": {},
+            "ai_used": False
+        }
     # Schema
     try:
         schema = get_table_schema(table_name)
@@ -105,5 +121,8 @@ def get_dashboard(table_name: str):
         "raw_data": raw_data,
         "insights": insights,
         "numeric_cols": numeric_cols,
-        "categorical_cols": categorical_cols
+        "categorical_cols": categorical_cols,
+        "chart_recommendations": chart_result["charts"],   # ← ADD
+        "chart_profile": chart_result["profile"],          # ← ADD
+        "ai_charts_used": chart_result["ai_used"],
     }

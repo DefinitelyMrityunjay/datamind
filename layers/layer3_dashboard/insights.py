@@ -1,12 +1,9 @@
-import google.generativeai as genai
 from dotenv import load_dotenv
 import os
 import pandas as pd
+import requests
 
 load_dotenv()
-
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-2.0-flash")
 
 # -----------------------------------------------
 # MAIN — Generate AI insights from a DataFrame
@@ -14,8 +11,8 @@ model = genai.GenerativeModel("gemini-2.0-flash")
 
 def generate_insights(df: pd.DataFrame, table_name: str) -> str:
     """
-    Sends a summary of the DataFrame to Gemini
-    and gets back a written analysis of key insights.
+    Sends a summary of the DataFrame to local Mistral
+    and gets back written analysis of key insights.
     """
     try:
         summary = build_data_summary(df)
@@ -27,14 +24,29 @@ You are a senior data analyst. Analyze this dataset and provide:
 3. Any anomalies or interesting patterns
 4. One business recommendation based on the data
 
+Dataset name: {table_name}
+
 Dataset summary:
 {summary}
 
 Be concise, specific, and use numbers where possible.
 Write in clear bullet points.
 """
-        response = model.generate_content(prompt)
-        return response.text
+
+        response = requests.post(
+            "http://localhost:11434/api/generate",
+            json={
+                "model": "mistral",
+                "prompt": prompt,
+                "stream": False
+            },
+            timeout=60
+        )
+
+        response.raise_for_status()
+        result = response.json()
+
+        return result.get("response", "").strip()
 
     except Exception as e:
         return f"⚠️ AI insights unavailable: {e}"
