@@ -8,6 +8,7 @@ import DataTable from "../components/DataTable";
 import InsightsCard from "../components/InsightsCard";
 import ChatWidget from "../components/ChatWidget";
 import ChartGrid from "../components/ChartGrid";
+import Navbar from "../components/Navbar";
 
 
 export default function Dashboard() {
@@ -25,89 +26,92 @@ export default function Dashboard() {
   }, [tableName]);
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin text-5xl mb-4">⚙️</div>
-        <p className="text-gray-400 text-lg">Building your dashboard...</p>
+    <div className="loading-overlay">
+      <div style={{ textAlign: "center" }}>
+        <div className="loading-spinner" style={{ margin: "0 auto 16px" }} />
+        <p style={{ color: "var(--text-muted)", fontSize: "0.95rem" }}>Building your dashboard…</p>
       </div>
     </div>
   );
 
   if (error) return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-      <p className="text-red-400">❌ {error}</p>
+    <div className="loading-overlay">
+      <p style={{ color: "#fca5a5" }}>❌ {error}</p>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-900 px-6 py-8">
+    <div style={{ background: "var(--bg-primary)", minHeight: "100vh" }}>
+      <Navbar />
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-white">🧠 AnalyzeIQ</h1>
-          <p className="text-gray-400 mt-1">
-            Table: <span className="text-indigo-400 font-mono">{tableName}</span>
-          </p>
+      <div className="dashboard-page">
+        {/* Header */}
+        <div className="dashboard-header">
+          <div>
+            <h1 className="dashboard-title">datamind.</h1>
+            <p className="dashboard-subtitle">
+              Table: <span className="table-name-badge">{tableName}</span>
+            </p>
+          </div>
+          <button
+            id="upload-new-btn"
+            className="btn-back"
+            onClick={() => navigate("/")}
+          >
+            ← Upload New File
+          </button>
         </div>
-        <button
-          onClick={() => navigate("/")}
-          className="bg-gray-800 hover:bg-gray-700 text-white px-5 py-2 rounded-xl border border-gray-700 transition-all"
-        >
-          ← Upload New File
-        </button>
-      </div>
 
-      {/* Metrics */}
-      {data.metrics && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {Object.entries(data.metrics).slice(0, 4).map(([key, val]) => (
-            <MetricCard
-              key={key}
-              label={key.replace(/_/g, " ").toUpperCase()}
-              value={val.sum}
-              avg={val.mean}
+        {/* Metrics */}
+        {data.metrics && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {Object.entries(data.metrics).slice(0, 4).map(([key, val]) => (
+              <MetricCard
+                key={key}
+                label={key.replace(/_/g, " ").toUpperCase()}
+                value={val.sum}
+                avg={val.mean}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {data.bar_chart && (
+            <BarChart
+              data={data.bar_chart}
+              xLabel={data.bar_chart.x_label}
+              yLabel={data.bar_chart.y_label}
             />
-          ))}
+          )}
+          {data.line_chart && (
+            <LineChart
+              data={data.line_chart}
+              xLabel={data.line_chart.x_label}
+              yLabel={data.line_chart.y_label}
+            />
+          )}
         </div>
-      )}
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {data.bar_chart && (
-          <BarChart
-            data={data.bar_chart}
-            xLabel={data.bar_chart.x_label}
-            yLabel={data.bar_chart.y_label}
+        {/* AI Chart Recommendations */}
+        {data.chart_recommendations && (
+          <ChartGrid
+            recommendations={data.chart_recommendations}
+            data={data.raw_data}
           />
         )}
-        {data.line_chart && (
-          <LineChart
-            data={data.line_chart}
-            xLabel={data.line_chart.x_label}
-            yLabel={data.line_chart.y_label}
-          />
-        )}
+
+        {/* AI Insights */}
+        <div className="mb-8">
+          <InsightsCard insights={data.insights} />
+        </div>
+
+        {/* Data Table */}
+        <DataTable data={data.raw_data} />
+
+        <ChatWidget tableName={tableName} />
       </div>
-
-      {/* AI Chart Recommendations */}
-      {data.chart_recommendations && (
-        <ChartGrid
-          recommendations={data.chart_recommendations}
-          data={data.raw_data}
-        />
-      )}
-
-      {/* AI Insights */}
-      <div className="mb-8">
-        <InsightsCard insights={data.insights} />
-      </div>
-
-      {/* Data Table */}
-      <DataTable data={data.raw_data} />
-
-      <ChatWidget tableName={tableName} />
-
     </div>
   );
 }
